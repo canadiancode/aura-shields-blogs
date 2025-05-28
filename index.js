@@ -1,15 +1,30 @@
-// query Shopify for the list of blog categories
+// npm packages
 
-// get every single blog post
+// external js files
+const queryBlogs = require('./queryBlogs');
 
-// feed the list of categories and the curent blog posts to openAI with a pre-prompt
+async function runAi() {
 
-// get ai to return a json object with following keys & values:
-    // - title
-    // - body (in HTML format)
-    // - meta title
-    // - meta description
+    try {
 
-// extract values, add to object to add to Shopify blogs
+        // query Shopify for the list of blog categories
+        const allBlogs = await queryBlogs();
+        console.log('The fetched blogs: ', allBlogs);
 
-// add to Shopify blogs
+        // get ai to return a json object with following keys & values:
+            // - title
+            // - body (in HTML format)
+            // - meta title
+            // - meta description
+
+        // extract values, add to object to add to Shopify blogs
+
+        // add to Shopify blogs
+
+        console.log('✅ Successfully ran rinAi');
+
+    } catch (error) {
+        console.log('❌ failed to run the runAi function');
+    };
+};
+runAi();
