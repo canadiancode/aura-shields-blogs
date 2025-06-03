@@ -1,7 +1,7 @@
 // npm packages
 
 // external js files
-const queryBlogs = require('./queryBlogs');
+const queryBlogs = require('./shopifyBlogs');
 
 async function runAi() {
 

@@ -7,7 +7,7 @@ const STORE_DOMAIN = process.env.DOMAIN;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const GRAPHQL_ENDPOINT = `https://${STORE_DOMAIN}/admin/api/2025-04/graphql.json`;
 
-// Higher order function for fetching every blog’s Title & HTML bodies from AuraShields
+// higher order function for fetching every blog’s Title & HTML bodies from AuraShields
 async function queryBlogs() {
     const blogs = await fetchAllBlogs();
     const result = {};
@@ -24,9 +24,78 @@ async function queryBlogs() {
 };
 // queryBlogs();
 
-module.exports = queryBlogs;
+// higher order function for publishing a new blog on AuraShields
+async function publishArticle(blogId, articleData) {
+
+    // the blog ID
+    const BLOG_ID = 'gid://shopify/Blog/90648674455';
+
+    // build the article object
+    const newArticle = {
+        author:  { name: 'kevin heidema' },
+        title:   'An Even Fresher Take on EMF Science',
+        body:    '<h2>Why This Matters</h2><p>Our deep dive into EMF studies…</p>',
+        summary: '<p>Quick summary/excerpt of the article…</p>',
+        tags:    ['EMF', 'AuraShields'],
+      };
+    
+    try {
+
+        const articleStatus = await createArticle(BLOG_ID, newArticle);
+        console.log('articleStatus: ', articleStatus);
+
+    } catch (error) {
+        console.log('Failed to run publishArticle: ', error);
+    };
+};
+// publishArticle();
+
+module.exports = { queryBlogs, publishArticle };
 
 // Callback Functions //
+
+// create new article
+async function createArticle(blogId, articleFields) {
+    const mutation = `
+      mutation CreateArticle($article: ArticleCreateInput!) {
+        articleCreate(article: $article) {
+          article {
+            id
+            title
+            handle
+            publishedAt
+            body       # HTML body content
+            summary    # excerpt/summary
+            tags
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+  
+    // Build the variables payload exactly as Shopify expects:
+    const variables = {
+        article: {
+            blogId,
+            ...articleFields
+        }
+    };
+
+    const data = await graphqlRequest(mutation, variables);
+    const payload = data.articleCreate;
+
+    if (payload.userErrors.length) {
+      const messages = payload.userErrors
+        .map(err => `${err.field.join('.')}: ${err.message}`)
+        .join('; ');
+      throw new Error(`ArticleCreate failed: ${messages}`);
+    };
+
+    return payload.article;
+};
 
 // fetch all articles for a single blog
 async function fetchAllArticlesForBlog(blogId) {
@@ -75,6 +144,7 @@ async function fetchArticlesPage(blogId, { first = 50, after = null } = {}) {
     }));
 
     const pageInfo = data.blog.articles.pageInfo;
+    console.log('pageInfo: ', pageInfo);
     return {
         articles,
         hasNextPage: pageInfo.hasNextPage,
@@ -100,7 +170,7 @@ async function fetchAllBlogs() {
         // if hasNextPage is true, it will continue the loop
     } while (cursor);
 
-    // console.log('All blogs: ', all);
+    /// console.log('All blogs: ', all);
     return all;
 };
 
